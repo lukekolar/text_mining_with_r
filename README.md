@@ -1,2 +1,3 @@
-# text_mining_with_r
-Practicing along with "Text Mining with R" (Silge &amp; Robinson, 2017).
+# "Text Mining with R" play
+
+Practicing along with "[Text Mining with R](https://www.tidytextmining.com)" (Silge &amp; Robinson, 2017).
