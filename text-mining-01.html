@@ -372,6 +372,39 @@ summary {
 <hr />
 <p><strong>token</strong>: <em>meaningful unit of text for analysis</em></p>
 <p><strong>tokenization</strong>: <em>breaking text into tokens</em></p>
+<pre class="r"><code># Emily Dickinson example, pg. 2-4
+
+text &lt;- c(&quot;Because I could not stop for Death -&quot;,
+          &quot;He kindly stopped for me -&quot;,
+          &quot;The Carriage held but just Ourselves -&quot;,
+          &quot;and Immortality&quot;)
+
+text_df &lt;- tibble(line = 1:4, text = text)
+text_df
+
+text_df %&gt;% 
+  unnest_tokens(word, text)
+
+text_df %&gt;% 
+  unnest_tokens(word, text, to_lower = FALSE)</code></pre>
+<pre class="r"><code># Jane Austen intro, pg. 4-
+
+library(janeaustenr)
+
+original_books &lt;- austen_books() %&gt;% 
+  group_by(book) %&gt;% 
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex(&quot;^chapter [\\divxlc]&quot;,
+                                                 ignore_case = TRUE)))) %&gt;% 
+  ungroup()
+original_books
+
+tidy_books &lt;- original_books %&gt;% 
+  unnest_tokens(word, text)
+tidy_books
+
+data(stop_words)</code></pre>
+<p><strong>stop words</strong>: <em>read more <a href="https://en.wikipedia.org/wiki/Stop_words">here</a></em></p>
 </div>
 
 

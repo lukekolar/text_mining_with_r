@@ -16,8 +16,7 @@ output: html_document
 ```{r, message = F, echo = F}
 # Loading in packages...
 
-library(plyr)
-library(skimr)
+library(tidytext)
 library(tidyverse)
 
 # Loading in data...
@@ -25,5 +24,48 @@ library(tidyverse)
 
 ```
 
+```{r, echo = T, eval = F}
+# Emily Dickinson example, pg. 2-4
 
+text <- c("Because I could not stop for Death -",
+          "He kindly stopped for me -",
+          "The Carriage held but just Ourselves -",
+          "and Immortality")
+
+text_df <- tibble(line = 1:4, text = text)
+text_df
+
+text_df %>% 
+  unnest_tokens(word, text)
+
+text_df %>% 
+  unnest_tokens(word, text, to_lower = FALSE)
+
+```
+
+```{r, echo = T, eval = F}
+# Jane Austen intro, pg. 4-
+
+library(janeaustenr)
+
+original_books <- austen_books() %>% 
+  group_by(book) %>% 
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]",
+                                                 ignore_case = TRUE)))) %>% 
+  ungroup()
+original_books
+
+tidy_books <- original_books %>% 
+  unnest_tokens(word, text)
+tidy_books
+
+data(stop_words)
+
+
+
+
+```
+
+**stop words**: *read more [here](https://en.wikipedia.org/wiki/Stop_words)*
 
