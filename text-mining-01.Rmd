@@ -1,0 +1,29 @@
+---
+title: '"Text Mining with R" (01)'
+output: html_document
+---
+
+***
+
+## Chapter 1: The Tidy Text Format
+
+***
+
+**token**: *meaningful unit of text for analysis*
+
+**tokenization**: *breaking text into tokens*
+
+```{r, message = F, echo = F}
+# Loading in packages...
+
+library(plyr)
+library(skimr)
+library(tidyverse)
+
+# Loading in data...
+
+
+```
+
+
+
