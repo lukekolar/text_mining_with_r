@@ -417,7 +417,7 @@ tidy_books %&gt;%
   mutate(word = reorder(word, n)) %&gt;% 
   ggplot(aes(word, n)) + geom_col() + xlab(NULL) + coord_flip()</code></pre>
 <p><strong>stop words</strong>: <em>read more <a href="https://en.wikipedia.org/wiki/Stop_words">here</a></em></p>
-<pre class="r"><code># 'gutenbergr' intro, pg. 7-
+<pre class="r"><code># 'gutenbergr' intro, pg. 7-12
 
 library(gutenbergr)
 
@@ -476,6 +476,177 @@ cor.test(data = frequency[frequency$author == &quot;Brontë Sisters&quot;,],
 
 cor.test(data = frequency[frequency$author == &quot;H.G. Wells&quot;,],
          ~ proportion + `Jane Austen`)</code></pre>
+<p><strong><em>Chapter 1 summary</em></strong>:</p>
+<p>Discusses tokens and tokenization, as well as presents some interesting ways to visualize relationships between certain literary artists.</p>
+<p>Code takeaways include <code>unnest_tokens()</code> (from package <code>tidytext</code>), basic regular expressions as used in <code>regex()</code>, packages <code>janeaustenr</code> and <code>gutenbergr</code> for playing around, and the package <code>scales</code> which includes the <code>&quot;free_y&quot;</code> option in <code>facet_wrap()</code>.</p>
+<p>Refer back to later code chunks to see an intuitive way to view correlation plots and visualize word frequency. The “tidy text” format refers to text broken down into tokens, labeled by line, chapter, etc.</p>
+<hr />
+</div>
+<div id="chapter-2-sentiment-analysis-with-tidy-data" class="section level2">
+<h2>Chapter 2: Sentiment Analysis with Tidy Data</h2>
+<hr />
+<pre class="r"><code># Sentiment analysis intro, pg. 13-19
+
+sentiments  ## included in package 'tidytext'...
+
+get_sentiments(&quot;afinn&quot;)   ## ...divided into three lexicons
+get_sentiments(&quot;bing&quot;)
+get_sentiments(&quot;nrc&quot;)
+
+## Testing sentiments with Austen's 'Emma'
+
+tidy_books &lt;- austen_books() %&gt;% 
+  group_by(book) %&gt;% 
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex(&quot;^chapter [\\divxlc]&quot;,
+                                                 ignore_case = TRUE)))) %&gt;% 
+  ungroup() %&gt;% 
+  unnest_tokens(word, text)
+
+nrcjoy &lt;- get_sentiments(&quot;nrc&quot;) %&gt;% 
+  filter(sentiment == &quot;joy&quot;)
+
+tidy_books %&gt;% 
+  filter(book == &quot;Emma&quot;) %&gt;% 
+  inner_join(nrcjoy, by = &quot;word&quot;) %&gt;% 
+  count(word, sort = TRUE)
+
+## Comparing sentiment across Austen's works
+
+janeaustensentiment &lt;- tidy_books %&gt;% 
+  inner_join(get_sentiments(&quot;bing&quot;), by = &quot;word&quot;) %&gt;% 
+  count(book, index = linenumber %/% 80, sentiment) %&gt;% 
+  spread(sentiment, n, fill = 0) %&gt;% 
+  mutate(sentiment = positive - negative)
+  
+ggplot(janeaustensentiment, aes(index, sentiment, fill = book)) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ book, ncol = 2, scales = &quot;free_x&quot;)</code></pre>
+<pre class="r"><code># Examining sentiment in Austen's 'Pride &amp; Prejudice', pg. 19-22
+
+pride_prejudice &lt;- tidy_books %&gt;% 
+  filter(book == &quot;Pride &amp; Prejudice&quot;)
+
+afinn &lt;- pride_prejudice %&gt;% 
+  inner_join(get_sentiments(&quot;afinn&quot;), by = &quot;word&quot;) %&gt;% 
+  group_by(index = linenumber %/% 80) %&gt;% 
+  summarize(sentiment = sum(value)) %&gt;%       ## book has &quot;value&quot; as &quot;score&quot;
+  mutate(method = &quot;AFINN&quot;)
+
+bing_and_nrc &lt;- bind_rows(
+  pride_prejudice %&gt;% 
+    inner_join(get_sentiments(&quot;bing&quot;), by = &quot;word&quot;) %&gt;% 
+    mutate(method = &quot;Bing et al.&quot;),
+  pride_prejudice %&gt;% 
+    inner_join(get_sentiments(&quot;nrc&quot;), by = &quot;word&quot;) %&gt;% 
+                 filter(sentiment %in% c(&quot;positive&quot;, &quot;negative&quot;)) %&gt;% 
+    mutate(method = &quot;NRC&quot;)) %&gt;% 
+  count(method, index = linenumber %/% 80, sentiment) %&gt;% 
+  spread(sentiment, n, fill = 0) %&gt;% 
+  mutate(sentiment = positive - negative)
+
+bind_rows(afinn, bing_and_nrc) %&gt;% 
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ method, ncol = 1, scales = &quot;free_y&quot;)
+
+## Why is NRC biased so high?
+
+get_sentiments(&quot;nrc&quot;) %&gt;% 
+  filter(sentiment %in% c(&quot;positive&quot;, &quot;negative&quot;)) %&gt;% 
+  count(sentiment)
+
+get_sentiments(&quot;bing&quot;) %&gt;% 
+  count(sentiment)
+
+get_sentiments(&quot;afinn&quot;) %&gt;% 
+  count(value)</code></pre>
+<pre class="r"><code># Common positive and negative words, pg. 22-24
+
+bing_word_counts &lt;- tidy_books %&gt;% 
+  inner_join(get_sentiments(&quot;bing&quot;), by = &quot;word&quot;) %&gt;% 
+  count(word, sentiment, sort = TRUE) %&gt;% 
+  ungroup()
+
+bing_word_counts
+
+bing_word_counts %&gt;% 
+  group_by(sentiment) %&gt;% 
+  top_n(10) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(word = reorder(word, n)) %&gt;% 
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ sentiment, scales = &quot;free_y&quot;) +
+  labs(y = &quot;Contribution to sentiment&quot;,
+       x = NULL) +
+  coord_flip()
+
+## The word &quot;miss&quot; is a title, not negative...
+
+custom_stop_words &lt;- bind_rows(tibble(word = c(&quot;miss&quot;),
+                                      lexicon = c(&quot;custom&quot;)), 
+                               stop_words)
+
+custom_stop_words</code></pre>
+<pre class="r"><code># Wordcloud fun, pg. 25-26
+
+library(wordcloud)
+
+tidy_books %&gt;% 
+  anti_join(stop_words) %&gt;% 
+  count(word) %&gt;% 
+  with(wordcloud(word, n, max.words = 100))
+
+## Turning data frame into matrix for comparison.cloud()
+
+library(reshape2)
+
+tidy_books %&gt;% 
+  inner_join(get_sentiments(&quot;bing&quot;), by = &quot;word&quot;) %&gt;% 
+  count(word, sentiment, sort = TRUE) %&gt;% 
+  acast(word ~ sentiment, value.var = &quot;n&quot;, fill = 0) %&gt;% 
+  comparison.cloud(colors = c(&quot;gray20&quot;, &quot;gray80&quot;),
+                   max.words = 100)</code></pre>
+<pre class="r"><code># Units / tokenizing beyond words..., pg. 27-29
+
+PandP_sentences &lt;- tibble(text = prideprejudice) %&gt;% 
+  unnest_tokens(sentence, text, token = &quot;sentences&quot;)
+
+PandP_sentences$sentence[2]   ## not ideal... brief ways to fix on pg. 27
+
+## Try using a regex() pattern to divide and analyze chapters as tokens
+
+austen_chapters &lt;- austen_books() %&gt;% 
+  group_by(book) %&gt;% 
+  unnest_tokens(chapter, text, token = &quot;regex&quot;, 
+                pattern = &quot;Chapter|CHAPTER [\\dIVXLC]&quot;) %&gt;% 
+  ungroup()
+
+austen_chapters %&gt;% 
+  group_by(book) %&gt;% 
+  summarize(chapters = n())
+
+bingnegative &lt;- get_sentiments(&quot;bing&quot;) %&gt;% 
+  filter(sentiment == &quot;negative&quot;)
+
+wordcounts &lt;- tidy_books %&gt;% 
+  group_by(book, chapter) %&gt;% 
+  summarize(words = n())
+
+tidy_books %&gt;% 
+  semi_join(bingnegative) %&gt;% 
+  group_by(book, chapter) %&gt;% 
+  summarize(negativewords = n()) %&gt;% 
+  left_join(wordcounts, by = c(&quot;book&quot;, &quot;chapter&quot;)) %&gt;% 
+  mutate(ration = negativewords/words) %&gt;% 
+  filter(chapter != 0) %&gt;% 
+  top_n(1) %&gt;% 
+  ungroup()</code></pre>
+<p><strong><em>Chapter 2 summary</em></strong>:</p>
+<p>Discusses…</p>
+<p>Code takeaways include the <code>sentiments</code> dataset in package <code>tidytext</code> with <code>get_sentiments()</code> (with options <code>&quot;bing&quot;</code>, <code>&quot;afinn&quot;</code>, and <code>&quot;nrc&quot;</code>), <code>wordcloud()</code> and <code>comparison.cloud()</code> (from package <code>wordcloud</code>), <code>acast()</code> (from package <code>reshape2</code>), advanced packages <code>coreNLP</code> / <code>cleanNLP</code> / <code>sentimentr</code> for sentiment analysis beyond words, and the <code>token =</code> option in <code>unnest_tokens()</code></p>
+<p>Refer back to this</p>
 </div>
 
 
