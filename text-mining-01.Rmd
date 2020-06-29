@@ -343,3 +343,23 @@ Code takeaways include the `sentiments` dataset in package `tidytext` with `get_
 Refer back to this section for help tidying data for sentiment analysis and using various graphics to do so.
 
 
+***
+
+## Chapter 3: Analyzing Word and Document Frequency: tf-idf
+
+***
+
+```{r, eval = F}
+# Sentiment analysis intro, pg. 13-19
+
+
+## Testing sentiments with Austen's 'Emma'
+
+
+## Comparing sentiment across Austen's works
+
+
+  
+```
+
+
