@@ -336,8 +336,10 @@ tidy_books %>%
 
 ***Chapter 2 summary***: 
 
-Discusses...
+Discusses sentiment analysis and investigates options for conducting this as well as interesting routes of visualization.
 
 Code takeaways include the `sentiments` dataset in package `tidytext` with `get_sentiments()` (with options `"bing"`, `"afinn"`, and `"nrc"`), `wordcloud()` and `comparison.cloud()` (from package `wordcloud`), `acast()` (from package `reshape2`), advanced packages `coreNLP` / `cleanNLP` / `sentimentr` for sentiment analysis beyond words, and the `token =` option in `unnest_tokens()`
 
-Refer back to this
+Refer back to this section for help tidying data for sentiment analysis and using various graphics to do so.
+
+
